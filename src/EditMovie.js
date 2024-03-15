@@ -1,11 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react'
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { useFormik } from 'formik';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom'
 import * as yup from "yup";
 
-export default function AddMovie() {
+export default function EditMovie() {
+    const {id}=useParams();
+    const [movie,setmovie]=useState();
+    const [show,setShow]=useState(false);
+  
+    useEffect(() => {
+        fetch(`https://65f16b76034bdbecc7626ffb.mockapi.io/Movie1/${id}`,{
+            method: "GET"
+        })
+            .then((data) => data.json())
+            .then((mv) => setmovie(mv))
+            .then(()=>setShow(true))
+    },[]);
+    console.log(movie);
+  return (
+    
+    <div>
+        {show ? <EditForm movie={movie} />:"Loding..."}
+    </div>
+  )
+}
+function EditForm({movie}){
     const movieValidationSchema = yup.object({
         name: yup.string().required(),
         poster: yup.string().required().min(10).url(),
@@ -15,35 +36,33 @@ export default function AddMovie() {
     });
     const formik = useFormik({
         initialValues: {
-            name: "",
-            poster: "",
-            trailer: "",
-            rating: "",
-            summary: "",
+            name:movie.name,
+            poster:movie.poster,
+            trailer:movie.trailer,
+            rating: movie.rating,
+            summary: movie.summary,
         },
         validationSchema: movieValidationSchema,
-        onSubmit: (values) => {
-            console.log(values);
-            // alert("submitted");
-        },
-        onSubmit: (values) => {
-            addMovie(values)
+        onSubmit:(updateMovie) => {
+               editMovie(updateMovie)
+               console.log(updateMovie)
           },
-
+        
     });
-    const navigate = useNavigate();
-    const addMovie = (newMovie) => {
+    const navigate=useNavigate();
+    const editMovie = (updateMovie) => {
 
-        fetch("https://65f16b76034bdbecc7626ffb.mockapi.io/Movie1", {
-          method:"POST",
-          body:JSON.stringify(newMovie),
-          headers:{"Content-type" : "application/json"},
+        fetch(`https://65f16b76034bdbecc7626ffb.mockapi.io/Movie1/${movie.id}`, {
+          method:"PUT",
+          body:JSON.stringify(updateMovie),
+          headers:{"Content-type":"application/json"},
         }).then(()=>navigate("/portal/movie"));
       };
     
-    return (
-        <form className='addForm' onSubmit={formik.handleSubmit}>
-            <h1>Add Movie</h1>
+    return(
+        <div>
+            <form className='addForm' onSubmit={formik.handleSubmit}>
+            <h1>Edit Movie</h1>
             <TextField id="outlined-basic"
                 label="Name"
                 variant="outlined"
@@ -94,7 +113,9 @@ export default function AddMovie() {
                 error={formik.touched.summary && formik.errors.summary}
                 helperText={formik.touched.summary && formik.errors.summary ? formik.errors.summary : null}
             />
-            <Button variant="contained" type='submit'>Submit</Button>
+            <Button variant="contained" type='submit'>Save changes</Button>
         </form>
+
+        </div>
     )
 }
